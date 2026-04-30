@@ -1,0 +1,52 @@
+"""
+Caching pour réduire les coûts et accélérer les réponses pour les questions fréquentes.
+Ce fichier montre comment utiliser le Router de litellm avec une configuration de cache
+en mémoire pour stocker les réponses et accélérer les réponses pour les questions fréquentes.
+Il définit une liste de modèles avec leurs paramètres d'API, puis crée un Router avec 
+cache_responses=True pour activer le caching en mémoire.
+Il envoie une question fréquente à l'assistant DevOps Buddy et mesure le temps de réponse pour 
+le premier appel (qui va vers l'API) et le deuxième appel (qui utilise le cache), montrant ainsi 
+la différence de temps entre les deux appels.
+Il affiche aussi le nombre de fois que le cache a pu fournir une réponse et le rapport de temps 
+entre les deux appels.
+"""
+
+
+from litellm import Router
+from dotenv import load_dotenv
+import os
+import time
+
+load_dotenv()
+
+model_list = [
+    {
+        "model_name": "devops-buddy",
+        "litellm_params": {
+            "model": "openai/gpt-4.1-mini",
+            "api_key": os.getenv("OPENAI_API_KEY")
+        }
+    }
+]
+
+# Cache en mémoire (dev/test)
+router = Router(
+    model_list=model_list,
+    cache_responses=True
+)
+
+# Question fréquente
+question = "Comment redémarrer un pod Kubernetes ?"
+messages = [{"role": "user", "content": question}]
+
+# Premier appel — va vers l'API
+start = time.time()
+response1 = router.completion(model="devops-buddy", messages=messages)
+time1 = time.time() - start
+print(f"1er appel: {time1:.2f}s (API)")
+
+# Deuxième appel — du cache
+start = time.time()
+response2 = router.completion(model="devops-buddy", messages=messages)
+time2 = time.time() - start
+print(f"2e appel: {time2:.4f}s (cache) — {time1/max(time2, 0.001):.0f}x plus rapide")

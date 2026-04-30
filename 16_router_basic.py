@@ -28,7 +28,7 @@ load_dotenv()
 # Configuration des providers
 model_list = [
     {
-        "model_name": "devops-buddy",  # Alias unique pour l'app
+        "model_name": "devops-buddy",  # Alias unique pour l'app. model_name est utilisé pour identifier le provider dans les appels à router.completion(model="devops-buddy", ...)
         "litellm_params": {
             "model": "openai/gpt-4.1-mini",
             "api_key": os.getenv("OPENAI_API_KEY"),
