@@ -1,0 +1,26 @@
+# Litellm  Configuration YAML pour DevOps Buddy avec Router multi-providers, RAG et monitoring. Ce fichier définit une liste de modèles de langage à utiliser dans le Router, chacun avec ses propres paramètres d'API et un ordre de fallback. Il inclut également les paramètres de configuration pour le Router, tels que le nombre de tentatives, le délai d'attente, le nombre de fails autorisés avant de déclencher un fallback, le temps de cooldown après un certain nombre de fails, et l'option pour mettre en cache les réponses. Cette configuration est utilisée pour garantir une haute disponibilité et un monitoring efficace lors de l'utilisation de DevOps Buddy en production.
+
+model_list:
+  - model_name: devops-buddy
+    litellm_params:
+      model: openai/gpt-4.1-mini
+      api_key: os.environ/OPENAI_API_KEY
+      order: 1
+
+  - model_name: devops-buddy
+    litellm_params:
+      model: anthropic/claude-3-5-haiku-latest
+      api_key: os.environ/ANTHROPIC_API_KEY
+      order: 2
+
+  - model_name: embeddings
+    litellm_params:
+      model: openai/text-embedding-3-small
+      api_key: os.environ/OPENAI_API_KEY
+
+router_settings:
+  num_retries: 2
+  timeout: 30
+  # allowed_fails: 3
+  # cooldown_time: 60
+  cache_responses: true

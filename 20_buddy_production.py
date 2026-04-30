@@ -17,6 +17,7 @@ import json
 import numpy as np
 from dotenv import load_dotenv
 import os
+import yaml
 
 
 load_dotenv()
@@ -40,8 +41,8 @@ class ProductionLogger(CustomLogger):
 
 
 class CustomRouter(Router):
-    def __init__(self, model_list, callbacks, num_retries=2, timeout=30, cache_responses=True):
-        super().__init__(model_list, )
+    def __init__(self, model_list, callbacks, num_retries, timeout, cache_responses=True):
+        super().__init__(model_list, callbacks)
         self.callbacks = callbacks
 
 # DevOps Buddy prêt pour la production avec Router multi-providers, RAG et monitoring. La classe DevOpsBuddyProduction utilise un Router pour envoyer des requêtes à plusieurs modèles de langage, en utilisant une base de connaissances pour fournir du contexte aux réponses, et en enregistrant les métriques de chaque appel dans un logger personnalisé. Elle implémente la technique RAG pour rechercher les documents les plus pertinents dans la base de connaissances en fonction de la question posée, puis génère une réponse en utilisant le contexte récupéré. Elle utilise la fonction embedding pour générer des vecteurs d'embedding à partir du texte des documents et des questions, et la fonction cosine_similarity pour calculer la similarité entre les vecteurs d'embedding afin de trouver les documents les plus pertinents. Elle utilise la fonction completion pour générer des réponses à partir du contexte récupéré et de la question posée, en suivant un prompt système qui guide le comportement de l'assistant. Cette classe est conçue pour être utilisée en production, avec des fallbacks pour garantir une haute disponibilité et un monitoring pour suivre les performances et les coûts des appels aux modèles de langage.
@@ -77,15 +78,19 @@ Sois concis, donne des commandes concrètes."""
             }
         ]
 
+        with open("litellm_config.yaml") as f:
+            config = yaml.safe_load(f)
+
         logger = ProductionLogger()
         callbacks = [logger]
         # Router avec monitoring personnalisé pour la production et RAG pour la recherche de contexte dans la base de connaissances. Le Router est configuré avec une liste de modèles de langage, chacun avec ses propres paramètres d'API et un ordre de fallback. Le logger personnalisé (ProductionLogger) est utilisé pour enregistrer les métriques de chaque appel, ce qui permet de suivre les performances et les coûts en temps réel. La classe DevOpsBuddyProduction utilise ce Router pour envoyer des requêtes aux modèles de langage, en utilisant une base de connaissances pour fournir du contexte aux réponses, et en enregistrant les métriques de chaque appel dans le logger personnalisé. Cette configuration est conçue pour garantir une haute disponibilité et un monitoring efficace lors de l'utilisation de DevOps Buddy en production.
         self.router = CustomRouter(
             model_list=model_list,
-            num_retries=2,
-            timeout=30,
-            cache_responses=True,
+            # num_retries=2,
+            # timeout=30,
+            # cache_responses=True,
             callbacks=callbacks,
+            **config.get("router_settings", {})
         )
 
         # Base de connaissances : chargement de la base de connaissances depuis un fichier JSON. Si le fichier n'existe pas, la base de connaissances est initialisée comme vide. La base de connaissances est utilisée pour fournir du contexte aux réponses générées par les modèles de langage, en utilisant la technique RAG pour rechercher les documents les plus pertinents en fonction de la question posée. Les documents et leurs vecteurs d'embedding correspondants sont stockés dans des listes, ce qui permet de faire des recherches efficaces en utilisant la fonction cosine_similarity pour mesurer la pertinence des documents par rapport à une requête.
